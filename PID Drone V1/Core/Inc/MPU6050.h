@@ -41,7 +41,6 @@ References:
 #define USER_CNT_REG		0x6A
 #define FIFO_COUNTH_REG 	0x72
 #define FIFO_R_W_REG 		0x74
-#define GYRO_XOUT_H_REG 	0x43
 
 //TypeDefs and Enums
 //1- MPU Configuration 

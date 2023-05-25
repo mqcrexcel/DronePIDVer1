@@ -39,6 +39,10 @@
  *
  */
 
+#define Motor_1_FL TIM_CHANNEL_1
+#define Motor_2_FR TIM_CHANNEL_2
+#define Motor_3_RL TIM_CHANNEL_3
+#define Motor_4_RR TIM_CHANNEL_4
 
 
 /* USER CODE END Header */
@@ -79,7 +83,6 @@ PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
 int count = 0;
-long gyro_x_cal, gyro_y_cal, gyro_z_cal;
 float angle_pitch, angle_roll;
 int gyro_x, gyro_y, gyro_z;
 long acc_x, acc_y, acc_z, acc_total_vector;
@@ -87,12 +90,15 @@ int temperature;
 long gyro_x_cal, gyro_y_cal, gyro_z_cal;
 long loop_timer;
 int lcd_loop_counter;
-float angle_pitch, angle_roll;
 int angle_pitch_buffer, angle_roll_buffer;
 bool set_gyro_angles;
 float angle_roll_acc, angle_pitch_acc;
 float angle_pitch_output, angle_roll_output;
-bool IsCalibSensor = true, IsReadSensor = false, IsSensorReady = false;
+bool IsCalibSensor = false, IsInitDone = false, IsCalibDone = false;
+
+float speedFR, speedRR;
+float deltaRoll, deltaPitch, deltaYaw;
+
 int16_t calibCount = 0;
 /* USER CODE END PV */
 
@@ -150,6 +156,18 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_4);
+
+
+  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,100);
+  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,100);
+  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_3,100);
+  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_4,100);
+
+  // 30-Nov MQC : Disable MPU6050. You need to enable it later
   MPU6050_Init(&hi2c1);
   myMpuConfig.Accel_Full_Scale = AFS_SEL_8g;
   myMpuConfig.ClockSource = Internal_8MHz;
@@ -157,27 +175,74 @@ int main(void)
   myMpuConfig.Gyro_Full_Scale = FS_SEL_500;
   myMpuConfig.Sleep_Mode_Bit = 0;  //1: sleep mode, 0: normal mode
   MPU6050_Config(&myMpuConfig);
+  IsInitDone = true;
 
-  // Blinking LED to inform when IMU sensor init done, then go to calibration state
+  HAL_TIM_Base_Start_IT(&htim2);
+
+  // Initial Done
   for(int i = 0; i<10; i++)
   {
 	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	  HAL_Delay(200);
+	  HAL_Delay(300);
   }
-
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
   HAL_Delay(3000);
 
+  IsCalibSensor = true;
+  while(IsCalibSensor)
+  {
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  }
 
-  HAL_TIM_Base_Start_IT(&htim2);
-  IsSensorReady = true;
+  // Calibration Done
+  for(int i = 0; i<10; i++)
+  {
+	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  HAL_Delay(100);
+  }
 
-
+  // 1ms = 100; 2ms = 200
+  speedRR = 100;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  deltaRoll = angle_roll_output;
+//	  speedRR = 150 + (deltaRoll * 0.5);
+//	  speedFR = 150 - (deltaRoll * 0.5);
+//
+//
+//	  if(speedRR < 120) speedRR = 120;
+//	  if(speedFR < 120) speedFR = 120;
+//
+//	  if(speedRR > 200) speedRR = 200;
+//	  if(speedFR > 200) speedFR = 200;
+
+
+	  speedRR ++;
+	  HAL_Delay(200);
+	  if(speedRR > 140) speedRR = 140;
+
+	  __HAL_TIM_SetCompare(&htim3,Motor_1_FL,speedRR);
+	  __HAL_TIM_SetCompare(&htim3,Motor_2_FR,speedRR);
+	  __HAL_TIM_SetCompare(&htim3,Motor_3_RL,speedRR);
+	  __HAL_TIM_SetCompare(&htim3,Motor_4_RR,speedRR);
+
+//	  for(int duty = 100; duty < 250; duty++)
+//	  {
+//		  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,duty);
+//		  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,duty);
+//		  HAL_Delay(100);
+//	  }
+//	  for(int duty = 250; duty > 100; duty--)
+//	  {
+//		  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,duty);
+//		  __HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_2,duty);
+//		  HAL_Delay(100);
+//	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -290,7 +355,7 @@ static void MX_TIM1_Init(void)
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -376,9 +441,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 999;
+  htim3.Init.Prescaler = 719;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 144;
+  htim3.Init.Period = 1999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -587,7 +652,7 @@ static void MX_GPIO_Init(void)
 		 // Start to calibration the sensor, DO NOT make vibration !!
 		 //MPU6050_Get_Accel_RawData(&myAccelRaw);
 		 //MPU6050_Get_Gyro_RawData(&myGyroRaw);
-		 if(IsCalibSensor && IsSensorReady)
+		 if(IsCalibSensor && IsInitDone)
 		 {
 		 	MPU6050_Get_Gyro_RawData(&myGyroRaw);
 		 	gyro_x_cal += myGyroRaw.x;
@@ -600,31 +665,34 @@ static void MX_GPIO_Init(void)
 				gyro_y_cal /= 2000;
 				gyro_z_cal /= 2000;
 				IsCalibSensor = false;
-				IsReadSensor = true;
+				IsCalibDone = true;
+				//IsReadSensor = true;
 			}
 
-			if(!calibCount %20)
-			{
-				HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-			}
+//			if(!calibCount %20)
+//			{
+//				HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//			}
 		}
 
-		if(IsReadSensor)
+		if(IsCalibDone)
 		{
 			MPU6050_Get_Accel_RawData(&myAccelRaw);
 			MPU6050_Get_Gyro_RawData(&myGyroRaw);
 
-	 		gyro_x = myAccelRaw.x;
-			gyro_y = myAccelRaw.y;
-			gyro_z = myAccelRaw.z;
+			// myAccelRaw
+	 		gyro_x = myGyroRaw.x;
+			gyro_y = myGyroRaw.y;
+			gyro_z = myGyroRaw.z;
 
 			gyro_x -= gyro_x_cal;
 			gyro_y -= gyro_y_cal;
 			gyro_z -= gyro_z_cal;
 
 			// 0.0000610687 = 1/250*65.5 (250Hz, 65.5 Degree/s)
+			// 3-Dec MQC: Need to uncomnet 2 line below
 			angle_pitch += gyro_x * 0.0000610687;
-			angle_roll += gyro_y* 0.0000610687;
+			angle_roll += gyro_y * 0.0000610687;
 			//angle_pitch += myGyroRaw.x * 0.0000610687;
 			//angle_roll += myGyroRaw.y * 0.0000610687;
 

@@ -240,7 +240,26 @@ void EXTI0_IRQHandler(void)
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
+	// Clears the EXTI's line pending bits
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_1);
 
+    // If Rising then reset TIM3
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) != 0)
+    {
+      // Reset TIM3 counter value
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
+    // If Falling then record pulse using TIM3
+    else
+    {
+      // Get TIM3 capture value
+      ValuePulse1[1] = (int32_t)htim3.Instance->CNT;
+      // HAL library function to compare with register programming
+      // LowPulse[0] = __HAL_TIM_GET_COUNTER(&htim3);
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
@@ -254,7 +273,26 @@ void EXTI1_IRQHandler(void)
 void EXTI2_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI2_IRQn 0 */
+	// Clears the EXTI's line pending bits
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_2);
 
+    // If Rising then reset TIM3
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2) != 0)
+    {
+      // Reset TIM3 counter value
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
+    // If Falling then record pulse using TIM3
+    else
+    {
+      // Get TIM3 capture value
+      ValuePulse1[2] = (int32_t)htim3.Instance->CNT;
+      // HAL library function to compare with register programming
+      // LowPulse[0] = __HAL_TIM_GET_COUNTER(&htim3);
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
   /* USER CODE END EXTI2_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
   /* USER CODE BEGIN EXTI2_IRQn 1 */
@@ -268,7 +306,26 @@ void EXTI2_IRQHandler(void)
 void EXTI3_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI3_IRQn 0 */
+	// Clears the EXTI's line pending bits
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_3);
 
+    // If Rising then reset TIM3
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) != 0)
+    {
+      // Reset TIM3 counter value
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
+    // If Falling then record pulse using TIM3
+    else
+    {
+      // Get TIM3 capture value
+      ValuePulse1[3] = (int32_t)htim3.Instance->CNT;
+      // HAL library function to compare with register programming
+      // LowPulse[0] = __HAL_TIM_GET_COUNTER(&htim3);
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
   /* USER CODE END EXTI3_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
   /* USER CODE BEGIN EXTI3_IRQn 1 */
@@ -282,7 +339,26 @@ void EXTI3_IRQHandler(void)
 void EXTI4_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_IRQn 0 */
+	// Clears the EXTI's line pending bits
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_4);
 
+    // If Rising then reset TIM3
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) != 0)
+    {
+      // Reset TIM3 counter value
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
+    // If Falling then record pulse using TIM3
+    else
+    {
+      // Get TIM3 capture value
+      ValuePulse1[4] = (int32_t)htim3.Instance->CNT;
+      // HAL library function to compare with register programming
+      // LowPulse[0] = __HAL_TIM_GET_COUNTER(&htim3);4
+      htim3.Instance->CNT = 0;
+      __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    }
   /* USER CODE END EXTI4_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
